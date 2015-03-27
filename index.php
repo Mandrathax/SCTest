@@ -9,11 +9,11 @@ and open the template in the editor.
 include_once 'lib.php';
 session_start();
 
-$src = "images/" . session_id();
+$src = "images/" . session_id() . '.jpg';
 
 $time = time();
 if (isset($_SESSION['time'])) {
-    if ($time - $_SESSION['time'] > 20) {
+    if ($time - $_SESSION['time'] > 200) {
         if (file_exists($src)) {
             unlink($src);
         }
@@ -31,7 +31,7 @@ if (verifyFileUpload('inputImage')) {
     if (file_exists($src)) {
         unlink($src);
     }
-    move_uploaded_file($_FILES["inputImage"]["tmp_name"], "images/" . session_id());
+    move_uploaded_file($_FILES["inputImage"]["tmp_name"], "images/" . session_id() . '.jpg');
     $_SESSION['image'] = $_FILES["inputImage"]["name"];
 }
 if (!file_exists($src)) {
@@ -55,6 +55,8 @@ if (isset($_POST['height']) && isset($_POST['width'])) {
     if ($w > 0 && $h > 0) {
         $width = $w;
         $height = $h;
+        
+        exec('seam-carving.exe ' . $src . ' ' . $width . 'x' . $height . ' ' . $src . ' ' . '3 100', $output, $ret);
     }
 }
 ?>
