@@ -6,21 +6,48 @@ and open the template in the editor.
 -->
 
 <?php
-session_start();
 include_once 'lib.php';
+session_start();
 
-$width = 800;
-$height = 600;
+$src = "images/" . session_id();
+
+$time = time();
+if (isset($_SESSION['time'])) {
+    if ($time - $_SESSION['time'] > 20) {
+        if (file_exists($src)) {
+            unlink($src);
+        }
+
+        session_destroy();
+        session_start();
+    }
+} else {
+    $_SESSION['time'] = $time;
+}
+
+
 
 if (verifyFileUpload('inputImage')) {
+    if (file_exists($src)) {
+        unlink($src);
+    }
     move_uploaded_file($_FILES["inputImage"]["tmp_name"], "images/" . session_id());
-    $src = "images/" . session_id();
-    $dims = getimagesize($src);
-    $width = $dims[0];
-    $height = $dims[1];
-} else {
+    $_SESSION['image'] = $_FILES["inputImage"]["name"];
+}
+if (!file_exists($src)) {
     $src = 'images/default.jpg';
 }
+if (!isset($_SESSION['image'])) {
+    $img_name = 'Default image';
+} else {
+    $img_name = $_SESSION['image'];
+}
+
+$dims = getimagesize($src);
+$width = $dims[0];
+$height = $dims[1];
+
+
 
 if (isset($_POST['height']) && isset($_POST['width'])) {
     $w = (int) htmlentities($_POST['width']);
@@ -52,7 +79,7 @@ if (isset($_POST['height']) && isset($_POST['width'])) {
                     <a class="navbar-brand" href="#">
                         <img alt="Brand" width="20" height="20" src="images/brand.png">
                     </a>
-                    <a class="navbar-brand" href="#">
+                    <a class="navbar-brand" href="">
                         SCTest
                     </a>
                 </div>
@@ -64,27 +91,8 @@ if (isset($_POST['height']) && isset($_POST['width'])) {
                         </div>
                         <button type="submit" class="btn btn-success">Upload image</button>
                     </form>
-                    <!--                    <ul class="nav navbar-nav">
-                                            <li>
-                                                <a href="#">Navbar Item 1</a>
-                                            </li>
-                                            <li class="dropdown">
-                                                <a href="#" class="dropdown-toggle" data-toggle="dropdown">Navbar Item 2<b class="caret"></b></a>
-                                                <ul class="dropdown-menu">
-                                                    <li><a href="#">Navbar Item2 - Sub Item 1</a></li>
-                                                </ul>
-                                            </li>
-                                            <li>
-                                                <a href="#">Navbar Item 3</a>
-                                            </li>
-                                        </ul>-->
                     <ul class="nav navbar-nav pull-right">
-                        <li class="dropdown">
-                            <a href="#" id="nbAcctDD"><i class="icon-user"></i>Quit<i class="icon-sort-down"></i></a>
-                            <!--                            <ul class="dropdown-menu pull-right">
-                                                            <li><a href="#">Log Out</a></li>
-                                                        </ul>-->
-                        </li>
+                        <p class="navbar-text navbar-right"><?php echo $img_name; ?></p>
                     </ul>
                 </nav>
             </div>
@@ -94,14 +102,25 @@ if (isset($_POST['height']) && isset($_POST['width'])) {
 
                 <div id="sidebar" class="container col-sm-12">
                     <h4>Parameters</h4>
-                    <form>
+                    <form method="post" action="">
                         <div class="form-group">
                             <label for="width">Width</label>
-                            <input type="number" class="form-control" id="width" min="1" placeholder="800">
+                            <input type="number" name="width" class="form-control" id="width" min="1" placeholder="target width">
                         </div>
                         <div class="form-group">
                             <label for="height">Height</label>
-                            <input type="number" class="form-control" id="height" min="1" placeholder="600">
+                            <input type="number" name="height" class="form-control" id="height" min="1" placeholder="target height">
+                        </div>
+                        <div class="form-group">
+                            <select name="algo">
+                                <optgroup label="Random">
+                                    <option value="3">Random</option>
+                                </optgroup>
+                                <optgroup label="Dynamic">
+                                    <option value="2">Forward</option>
+                                    <option value="1">Backward</option>
+                                </optgroup>
+                            </select>
                         </div>
 
                         <!--                        <div class="form-group">
@@ -109,7 +128,7 @@ if (isset($_POST['height']) && isset($_POST['width'])) {
                                                         <input type="checkbox"> Check me out
                                                     </label>
                                                 </div>-->
-                        <button type="submit" class="btn btn-info btn-block">Seam-carve me!</button>
+                        <button type="submit" class="btn btn-primary btn-block">Seam-carve me!</button>
                     </form>
                 </div>
             </div>
@@ -124,5 +143,10 @@ if (isset($_POST['height']) && isset($_POST['width'])) {
         </div>
         <script src="js/jquery-1.11.2.min.js"></script>
         <script src="js/bootstrap.min.js"></script>
+        <script src="js/jquery.fs.selecter.min.js"></script>
+        <script src="js/index.js"></script>
+
     </body>
 </html>
+
+
