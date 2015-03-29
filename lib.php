@@ -8,7 +8,7 @@ function verifyFileUpload($filename) {
 
             $fileInfos = pathinfo($_FILES[$filename]['name']);
             $uploadExtension = $fileInfos['extension'];
-            $allowedExtensions = array('png', 'jpg', 'bmp');
+            $allowedExtensions = array('png', 'jpg', 'bmp', 'jpeg');
             if (in_array($uploadExtension, $allowedExtensions)) {
 
                 return 'no error';
@@ -44,8 +44,8 @@ function verifyFileUpload($filename) {
                     break;
             }
         }
-    }else{
-        $err=' ';
+    } else {
+        $err = ' ';
     }
 
     return $err;
@@ -55,7 +55,8 @@ function clean_tmp() {
     $dir = scandir('images/tmp');
     $time = time();
     foreach ($dir as $file) {
-        if (end(explode('.', $file)) == 'jpg' AND file_exists($file)) {
+        $ext = explode('.', $file);
+        if (end($ext) == 'jpg' AND file_exists($file)) {
             $diff = $time - filemtime($file);
             if ($diff > 1800) {
                 print_r($file);

@@ -1,3 +1,4 @@
 /nbproject
 *.exe
 /images/tmp
+conf.php

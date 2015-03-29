@@ -1,38 +1,34 @@
-<!DOCTYPE html>
-<!--
-To change this license header, choose License Headers in Project Properties.
-To change this template file, choose Tools | Templates
-and open the template in the editor.
--->
-
 <?php
 include_once 'lib.php';
-header("Cache-Control: no-store, no-cache");
-//clean_tmp();
+include_once 'conf.php';
+
+header("Cache-Control: no-store, no-cache, must-revalidate");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Last-Modified: " . gmdate("D, d M Y H:i:s", time() - 60) . " GMT");
+clean_tmp();
 
 session_start();
 
 $src = "images/tmp/" . session_id() . '.jpg';
 $dst = $src;
-
 $time = time();
 if (isset($_SESSION['time'])) {
     if ($time - $_SESSION['time'] > 900) {
         if (file_exists($src)) {
             unlink($src);
         }
-
         session_destroy();
         session_start();
-        $src = "images/tmp" . session_id() . '.jpg';
+        $src = "images/tmp/" . session_id() . '.jpg';
         $dst = $src;
     }
-} else {
-    $_SESSION['time'] = $time;
 }
 
+$_SESSION['time'] = $time;
+
+
 $upload_result = verifyFileUpload('inputImage');
-$success =  $upload_result === 'no error';
+$success = $upload_result === 'no error';
 
 if ($success) {
     if (file_exists($src)) {
@@ -41,9 +37,11 @@ if ($success) {
     move_uploaded_file($_FILES["inputImage"]["tmp_name"], $src);
     $_SESSION['image'] = $_FILES["inputImage"]["name"];
 }
+
 if (!file_exists($src)) {
     $src = 'images/default.jpg';
 }
+
 if (!isset($_SESSION['image'])) {
     $img_name = 'Default image';
 } else {
@@ -64,13 +62,27 @@ if (isset($_POST['height']) && isset($_POST['width']) && isset($_POST['algo'])) 
         $width = $w;
         $height = $h;
         if (in_array($method, array('1', '2', '3'))) {
-            exec('seam-carving.exe ' . $src . ' ' . $width . 'x' . $height . ' ' . $dst . ' ' . $method . ' 100', $output, $ret);
-            $exec_time = explode(' ',$output[0])[2] . ' ms';
+            set_time_limit(800);
+            exec('export LD_LIBRARY_PATH='.$lib.' && ./seam-carving ' . escapeshellcmd($src) . ' ' . escapeshellcmd($width) . 'x' . escapeshellcmd($height) . ' ' . escapeshellcmd($dst) . ' ' . $method . ' 100 2>&1', $output, $ret);
+            if (sizeof($output) > 0) {
+                $parse = explode(' ', $output[0]);
+                if ($parse[0] === 'Duration') {
+                    $exec_time = $parse[2] . ' s';
+                } else {
+                    $exec_time = $output[0];
+                }
+            } else {
+                $exec_time = 'timeout';
+            }
         }
     }
 }
-?>
 
+if (!file_exists($dst)) {
+    $dst = 'images/default.jpg';
+}
+?>
+<!DOCTYPE html>
 <html>
     <head>
         <meta charset="UTF-8">
@@ -102,13 +114,13 @@ if (isset($_POST['height']) && isset($_POST['width']) && isset($_POST['algo'])) 
                         </div>
                         <button type="submit" class="btn btn-success">Upload image</button>
                     </form>
-                    <?php if (!$success) { ?>
+<?php if (!$success) { ?>
                         <ul class="nav navbar-nav">
                             <p class="navbar-text danger"><?php echo $upload_result; ?></p>
                         </ul>
-                    <?php } ?>
+<?php } ?>
                     <ul class="nav navbar-nav pull-right">
-                        <a class="navbar-text" href="https://github.com/Mandrathax/seam-carving">Get sources</a>
+                        <a class="navbar-text" href="https://github.com/Mandrathax/seam-carving" data-toggle="tooltip" data-placement="left" title="See sources on github">Get sources</a>
                     </ul>
                 </nav>
             </div>
@@ -152,23 +164,26 @@ if (isset($_POST['height']) && isset($_POST['width']) && isset($_POST['algo'])) 
                         <li class="list-group-item">
                             <b>Dimensions : </b><?php echo $width; ?>x<?php echo $height; ?> (px)
                         </li>
-                        <?php if(isset($exec_time)){ ?>
-                        <li class="list-group-item">
-                            <b>Execution time : </b><?php echo $exec_time; ?>
-                        </li>
-                        <?php } ?>
+<?php if (isset($exec_time)) { ?>
+                            <li class="list-group-item">
+                                <b>Execution time : </b><?php echo $exec_time; ?>
+                            </li>
+<?php } ?>
                     </ul>
-                    <div class="footer-copyright">
-                        <p><small>&copy; Paul Michel &amp; Antoine Prouvost 2015</small></p>
-                    </div>
+
                 </div>
+                <footer class="footer-copyright">
+                    <div class="container col-xs-12">
+                        <p class="text-muted"><small>&copy; Paul Michel &amp; Antoine Prouvost 2015</small></p>
+                    </div>
+                </footer>
             </div>
             <div id="main-wrapper" class="col-md-10 pull-right">
                 <div id="main" style="text-align: center;">
                     <!--                    <div class="page-header" style="text-align: center;">
                                             <h3>Image</h3>
                                         </div>-->
-                    <img class="img-rounded" src="<?php echo $src; ?>"  >
+                    <img class="img-rounded" src="<?php echo $dst; ?>" >
                 </div>
             </div>
         </div>
