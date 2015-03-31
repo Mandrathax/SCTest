@@ -1,7 +1,5 @@
 <?php
 include_once 'lib.php';
-include_once 'conf.php';
-
 header("Cache-Control: no-store, no-cache, must-revalidate");
 header("Cache-Control: post-check=0, pre-check=0", false);
 header("Last-Modified: " . gmdate("D, d M Y H:i:s", time() - 60) . " GMT");
@@ -62,8 +60,9 @@ if (isset($_POST['height']) && isset($_POST['width']) && isset($_POST['algo'])) 
         $width = $w;
         $height = $h;
         if (in_array($method, array('1', '2', '3'))) {
-            set_time_limit(800);
-            exec('export LD_LIBRARY_PATH='.$lib.' && ./seam-carving ' . escapeshellcmd($src) . ' ' . escapeshellcmd($width) . 'x' . escapeshellcmd($height) . ' ' . escapeshellcmd($dst) . ' ' . $method . ' 100 2>&1', $output, $ret);
+            sleep(30);
+            exec('export LD_LIBRARY_PATH=/kunden/homepages/24/d570757684/htdocs/sctest/lib/lib && ./seam-carving ' . escapeshellcmd($src) . ' ' . escapeshellcmd($width) . 'x' . escapeshellcmd($height) . ' ' . escapeshellcmd($dst) . ' ' . $method . ' 100 2>&1', $output, $ret);
+
             if (sizeof($output) > 0) {
                 $parse = explode(' ', $output[0]);
                 if ($parse[0] === 'Duration') {
@@ -93,6 +92,7 @@ if (!file_exists($dst)) {
         <link rel="icon" href="images/brand.gif" />
     </head>
     <body>
+
         <div id="header" class="navbar navbar-default navbar-fixed-top">
             <div class="container-fluid">
                 <div class="navbar-header">
@@ -114,11 +114,11 @@ if (!file_exists($dst)) {
                         </div>
                         <button type="submit" class="btn btn-success">Upload image</button>
                     </form>
-<?php if (!$success) { ?>
+                    <?php if (!$success) { ?>
                         <ul class="nav navbar-nav">
                             <p class="navbar-text danger"><?php echo $upload_result; ?></p>
                         </ul>
-<?php } ?>
+                    <?php } ?>
                     <ul class="nav navbar-nav pull-right">
                         <a class="navbar-text" href="https://github.com/Mandrathax/seam-carving" data-toggle="tooltip" data-placement="left" title="See sources on github">Get sources</a>
                     </ul>
@@ -130,7 +130,7 @@ if (!file_exists($dst)) {
 
                 <div id="sidebar" class="container col-sm-12">
                     <h4>Parameters</h4>
-                    <form method="post" action="">
+                    <form>
                         <div class="form-group">
                             <label for="width">Width</label>
                             <input type="number" name="width" class="form-control" id="width" min="1" value="<?php echo $width; ?>">
@@ -140,7 +140,7 @@ if (!file_exists($dst)) {
                             <input type="number" name="height" class="form-control" id="height" min="1" value="<?php echo $height; ?>">
                         </div>
                         <div class="form-group">
-                            <select name="algo">
+                            <select name="algo" id="algo">
                                 <optgroup label="Random">
                                     <option value="3">Random</option>
                                 </optgroup>
@@ -150,7 +150,7 @@ if (!file_exists($dst)) {
                                 </optgroup>
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-block">Seam-carve me!</button>
+                        <button class="btn btn-primary btn-block" id="submit_carve">Seam-carve me!</button>
                     </form>
 
 
@@ -162,13 +162,13 @@ if (!file_exists($dst)) {
                             <b>Name : </b><?php echo $img_name; ?>
                         </li>
                         <li class="list-group-item">
-                            <b>Dimensions : </b><?php echo $width; ?>x<?php echo $height; ?> (px)
+                            <b>Dimensions : </b><span id='original_width'><?php echo $width; ?></span>x<span id='original_height'><?php echo $height; ?></span> (px)
                         </li>
-<?php if (isset($exec_time)) { ?>
+                        <?php if (isset($exec_time)) { ?>
                             <li class="list-group-item">
                                 <b>Execution time : </b><?php echo $exec_time; ?>
                             </li>
-<?php } ?>
+                        <?php } ?>
                     </ul>
 
                 </div>
@@ -179,11 +179,13 @@ if (!file_exists($dst)) {
                 </footer>
             </div>
             <div id="main-wrapper" class="col-md-10 pull-right">
+                <img src='images/loading.gif' id='loading' style="display: none;"/>
                 <div id="main" style="text-align: center;">
+                    
                     <!--                    <div class="page-header" style="text-align: center;">
                                             <h3>Image</h3>
                                         </div>-->
-                    <img class="img-rounded" src="<?php echo $dst; ?>" >
+                    <img class="img-rounded" src="<?php echo $dst; ?>?<?php echo time(); ?>" >
                 </div>
             </div>
         </div>
@@ -191,7 +193,6 @@ if (!file_exists($dst)) {
         <script src="js/bootstrap.min.js"></script>
         <script src="js/jquery.fs.selecter.min.js"></script>
         <script src="js/index.js"></script>
-
     </body>
 </html>
 
